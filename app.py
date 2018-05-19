@@ -14,7 +14,6 @@ from flask import Flask, jsonify
 # Database Setup
 #################################################
 engine = create_engine("sqlite:///hawaii.sqlite")
-conn = engine.connect()
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -22,12 +21,12 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 # Save reference to the table
-stations = Base.classes.stations
-measurements = Base.classes.measurements
+Stations = Base.classes.stations
+#Measurements = Base.classes.measurements
 
 # Create our session (link) from Python to the DB
 session = Session(engine)
-
+conn = engine.connect()
 
 
 #################################################
@@ -70,12 +69,19 @@ def welcome():
 
 
 @app.route("/api/v1.0/precipitation")
-def names():
+def precipitation():
     """Return  dates and temperature observations from the last year."""
-    results = pd.read_sql("SELECT date, tobs FROM measurements WHERE date> '2016-08-23'", conn)
-    date_temp = list(np.ravel(results))
-    return jsonify(date_temp)
 
+    precip_df = pd.read_sql("SELECT date, prcp FROM measurements", conn)
+    precip_df = precip_df.set_index("date")
+    all_obvs = []
+    for row in precip_df:
+        date_temp_dict = {}
+        date_temp_dict["date"] = row.date
+        date_temp_dict["temp"] = row.prcp
+        all_obvs.append(date_temp_dict)
+
+    return jsonify(all_obvs)
 '''
 @app.route("/api/v1.0/passengers")
 def passengers():
@@ -92,9 +98,8 @@ def passengers():
         passenger_dict["sex"] = passenger.sex
         all_passengers.append(passenger_dict)
 
-    return jsonify(all_passengers)
+    return jsonify(all_passengers)'''
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-'''
